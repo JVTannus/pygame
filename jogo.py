@@ -5,6 +5,7 @@ import json
 import random
 
 pygame.init()
+pygame.mixer.init()  # Inicializa o mixer de áudio
 
 # Constantes
 LARGURA, ALTURA = 400, 800
@@ -28,6 +29,19 @@ clock = pygame.time.Clock()
 fonte = pygame.font.SysFont("Arial", 24)
 fonte_grande = pygame.font.SysFont("Arial", 36)
 
+# Inicializa música
+pygame.mixer.music.load("Musica pygame.mp3")
+pygame.mixer.music.set_volume(0.5)  # Define o volume para 50%
+pygame.mixer.music.play(-1)  # -1 faz a música tocar em loop
+
+# Inicializa sons
+som_pulo = pygame.mixer.Sound("Pulo.mp3")
+som_pulo.set_volume(0.3)  # Define o volume do som de pulo para 30%
+som_explosao = pygame.mixer.Sound("Explosao.mp3")
+som_explosao.set_volume(0.4)  # Define o volume do som de explosão para 40%
+som_bomba = pygame.mixer.Sound("sombomba.mp3")
+som_bomba.set_volume(0.3)  # Define o volume do som de tiro da bomba para 30%
+
 background = pygame.image.load("1.png").convert()
 background = pygame.transform.scale(background, (LARGURA, ALTURA))
 
@@ -35,24 +49,59 @@ platimage = pygame.image.load("plataforma_1.png").convert_alpha()
 dados_path = "dados_jogador.json"
 
 def carregar_dados():
+    """
+    Carrega os dados dos jogadores do arquivo JSON.
+    
+    Return:
+        Dicionário contendo os dados dos jogadores (nickname: pontuação)
+    """
     if os.path.exists(dados_path):
         with open(dados_path, 'r') as f:
             return json.load(f)
     return {}
 
 def salvar_dados(dados):
+    """
+    Salva os dados dos jogadores em um arquivo JSON.
+    
+    Args:
+        Dicionário contendo os dados dos jogadores para salvar
+    """
     with open(dados_path, 'w') as f:
         json.dump(dados, f)
 
 texto_cache = {}
 
 def renderizar_texto_cached(texto, fonte, cor):
+    """
+    Renderiza texto com cache para melhor performance.
+    
+    Args:
+        texto (str): Texto a ser renderizado
+        fonte (pygame.font.Font): Fonte a ser utilizada
+        cor (tuple): Cor do texto em RGB
+        
+    Return:
+        pygame.Surface: Superfície com o texto renderizado
+    """
     chave = (texto, fonte, cor)
     if chave not in texto_cache:
         texto_cache[chave] = fonte.render(texto, True, cor)
     return texto_cache[chave]
 
 def desenhar_texto(texto, x, y, hover=False):
+    """
+    Desenha texto na tela com efeito hover opcional.
+    
+    Args:
+        texto (str): Texto a ser desenhado
+        x (int): Posição x do texto
+        y (int): Posição y do texto
+        hover (bool): Se True, aplica efeito hover ao texto
+        
+    Returns:
+        pygame.Rect: Retângulo que contém o texto
+    """
     cor = COR_HOVER if hover else COR_TEXTO
     texto_surface = fonte.render(texto, True, cor)
     rect = texto_surface.get_rect(center=(x + 50, y + 15))  
@@ -64,6 +113,12 @@ def desenhar_texto(texto, x, y, hover=False):
     return rect
 
 def obter_nickname():
+    """
+    Solicita e obtém o nickname do jogador.
+    
+    Return:
+        str: Nickname inserido pelo jogador
+    """
     nickname = ""
     digitando = True
     while digitando:
@@ -81,6 +136,7 @@ def obter_nickname():
 
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
+                pygame.mixer.music.stop()  # Para a música antes de sair
                 pygame.quit()
                 sys.exit()
             elif evento.type == pygame.KEYDOWN:
@@ -93,6 +149,12 @@ def obter_nickname():
     return nickname
 
 def mostrar_ranking(dados):
+    """
+    Exibe o ranking dos jogadores com as 5 melhores pontuações.
+    
+    Args:
+        dados (dict): Dicionário contendo os dados dos jogadores
+    """
     screen.fill(COR_BG)
     ranking = sorted(dados.items(), key=lambda x: x[1], reverse=True)
     titulo = fonte.render("Ranking dos Jogadores:", True, COR_TEXTO)
@@ -104,6 +166,10 @@ def mostrar_ranking(dados):
     pygame.time.wait(3000)
 
 def mostrar_instrucoes():
+    """
+    Exibe a tela de instruções do jogo com os controles e objetivos.
+    Permite retornar ao menu principal através do botão VOLTAR.
+    """
     instrucoes = [
         "INSTRUÇÕES:",
         "- Use as setas ← e → para mover",
@@ -135,6 +201,7 @@ def mostrar_instrucoes():
         
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
+                pygame.mixer.music.stop()  # Para a música antes de sair
                 pygame.quit()
                 sys.exit()
             elif evento.type == pygame.MOUSEBUTTONDOWN:
@@ -142,6 +209,13 @@ def mostrar_instrucoes():
                     return
 
 def menu():
+    """
+    Exibe o menu principal do jogo com opções para jogar, ver instruções,
+    ver highscores, resetar scores e sair.
+    
+    Return:
+        (nickname, dados) contendo o nickname do jogador e os dados salvos
+    """
     dados = carregar_dados()
     while True:
         if background:
@@ -166,6 +240,7 @@ def menu():
 
         for evento in pygame.event.get():
             if evento.type == pygame.QUIT:
+                pygame.mixer.music.stop()  # Para a música antes de sair
                 pygame.quit()
                 sys.exit()
             elif evento.type == pygame.MOUSEBUTTONDOWN:
@@ -190,10 +265,19 @@ def menu():
                     pygame.display.flip()
                     pygame.time.wait(2000)
                 elif sair_rect.collidepoint(mouse_pos):
+                    pygame.mixer.music.stop()  # Para a música antes de sair
                     pygame.quit()
                     sys.exit()
 
 def atualizar_pontuacao(nickname, dados, nova_pontuacao):
+    """
+    Atualiza a pontuação do jogador se for maior que a anterior.
+    
+    Args:
+        nickname (str): Nome do jogador
+        dados (dict): Dicionário com os dados dos jogadores
+        nova_pontuacao (int): Nova pontuação a ser verificada
+    """
     if nova_pontuacao > dados.get(nickname, 0):
         dados[nickname] = nova_pontuacao
         salvar_dados(dados)
@@ -263,10 +347,17 @@ class Jogador(pygame.sprite.Sprite):
 
         return self.rect.top <= ALTURA
 
-    def pular(self):
-        self.vel_y = FORCA_PULO
+    def pular(self, forca_extra=1.0):
+        """
+        Faz o jogador pular, alterando sua velocidade vertical e reproduzindo o som de pulo.
+        
+        Args:
+            forca_extra (float): Multiplicador da força do pulo (padrão: 1.0)
+        """
+        self.vel_y = FORCA_PULO * forca_extra
         self.no_chao = False
         self.image = self.imagem_pulando_direita if self.olhando_direita else self.imagem_pulando_esquerda
+        som_pulo.play()  # Reproduz o som de pulo
 
 class Plataforma(pygame.sprite.Sprite):
     def __init__(self, x, y, tipo="normal", largura=None):
@@ -291,12 +382,34 @@ class Plataforma(pygame.sprite.Sprite):
         self.rect.y = y
 
 def gerar_plataforma_aleatoria(y_base):
+    """
+    Gera uma plataforma em uma posição aleatória.
+    
+    Args:
+        y_base (int): Posição y base para gerar a plataforma
+        
+    Returns:
+        Plataforma: Nova plataforma gerada
+    """
     x = random.randint(50, LARGURA - 100)
     y = y_base - random.randint(50, ESPACO_PLATAFORMAS)  
     tipo = random.choices(["normal", "pequena", "grande"], weights=[0.7, 0.2, 0.1])[0]
     return Plataforma(x, y, tipo)
 
 def desenhar_texto_com_outline(superficie, texto, fonte, cor_texto, cor_outline, x, y, espessura=4):
+    """
+    Desenha texto com contorno na tela.
+    
+    Args:
+        superficie (pygame.Surface): Superfície onde o texto será desenhado
+        texto (str): Texto a ser desenhado
+        fonte (pygame.font.Font): Fonte a ser utilizada
+        cor_texto (tuple): Cor do texto em RGB
+        cor_outline (tuple): Cor do contorno em RGB
+        x (int): Posição x do texto
+        y (int): Posição y do texto
+        espessura (int): Espessura do contorno
+    """
     chave_texto = (texto, fonte, cor_texto)
     chave_outline = (texto, fonte, cor_outline)
     
@@ -319,6 +432,16 @@ def desenhar_texto_com_outline(superficie, texto, fonte, cor_texto, cor_outline,
     superficie.blit(texto_surface, texto_rect)
 
 def mostrar_game_over(pontuacao, melhor_pontuacao):
+    """
+    Exibe a tela de game over com a pontuação atual e melhor pontuação.
+    
+    Args:
+        pontuacao (int): Pontuação atual do jogador
+        melhor_pontuacao (int): Melhor pontuação do jogador
+        
+    Returns:
+        bool: True se o jogador quer continuar, False se quer sair
+    """
     if 'game_over_img' not in texto_cache:
         imagem_game_over = pygame.image.load("bombaraposa.png").convert_alpha()
         texto_cache['game_over_img'] = pygame.transform.scale(imagem_game_over, (LARGURA, ALTURA))
@@ -355,9 +478,18 @@ def mostrar_game_over(pontuacao, melhor_pontuacao):
         screen.blit(texto_reiniciar, (LARGURA//2 - texto_reiniciar.get_width()//2, ALTURA//2 + 80))
         
         pygame.display.flip()
-        clock.tick(60)  
+        clock.tick(60)
 
 def mostrar_vitoria(pontuacao):
+    """
+    Exibe a tela de vitória com a pontuação final.
+    
+    Args:
+        pontuacao (int): Pontuação final do jogador
+        
+    Returns:
+        bool: True se o jogador quer continuar, False se quer sair
+    """
     if 'vitoria_img' not in texto_cache:
         imagem_vitoria = pygame.image.load("vitoria.png").convert_alpha()
         texto_cache['vitoria_img'] = pygame.transform.scale(imagem_vitoria, (LARGURA, ALTURA))
@@ -392,7 +524,7 @@ def mostrar_vitoria(pontuacao):
         screen.blit(texto_reiniciar, (LARGURA//2 - texto_reiniciar.get_width()//2, ALTURA//2 + 80))
         
         pygame.display.flip()
-        clock.tick(60)  
+        clock.tick(60)
 
 class Boss(pygame.sprite.Sprite):
     def __init__(self):
@@ -459,6 +591,7 @@ class Boss(pygame.sprite.Sprite):
             elif self.alvo_x < self.rect.centerx and self.olhando_direita:
                 self.olhando_direita = False
                 self.image = self.imagem_esquerda
+            som_bomba.play()  # Toca o som quando o boss atira
             return True  
             
         return False
@@ -510,6 +643,10 @@ boss = Boss()
 grupo_sprites.add(boss)
 
 def iniciar_jogo():
+    """
+    Inicializa o jogo, criando o jogador, plataformas iniciais e resetando
+    as variáveis do jogo.
+    """
     global ultima_y
     grupo_sprites.empty()
     grupo_plataformas.empty()
@@ -553,6 +690,8 @@ while rodando:
         
         for meteoro in grupo_meteoros:
             if meteoro.collision_rect.colliderect(jogador.collision_rect):
+                som_explosao.play()  # Toca o som de explosão
+                pygame.time.wait(500)  # Espera 500ms para o som tocar
                 vivo = False
                 break
 
@@ -571,6 +710,9 @@ while rodando:
         continue
 
     if not vivo or jogador.rect.top > ALTURA:
+        if not vivo:  # Se morreu por colisão com bomba
+            som_explosao.play()  # Toca o som de explosão novamente para garantir
+            pygame.time.wait(500)  # Espera 500ms para o som tocar
         atualizar_pontuacao(nickname, dados_salvos, pontuacao)
         if not mostrar_game_over(pontuacao, melhor_pontuacao):
             rodando = False
@@ -592,11 +734,11 @@ while rodando:
             jogador.vel_y = 0
             
             if plataforma.tipo == "pequena":
-                jogador.pular()
+                jogador.pular(1.0)  # Pulo normal
             elif plataforma.tipo == "grande":
-                jogador.vel_y = FORCA_PULO * 1.5
+                jogador.pular(1.5)  # Pulo extra
             else:
-                jogador.pular()
+                jogador.pular(1.0)  # Pulo normal
             
             if plataforma not in plataformas_puladas:
                 plataformas_puladas.add(plataforma)
@@ -636,5 +778,6 @@ while rodando:
         screen.blit(texto_aviso, (LARGURA - texto_aviso.get_width() - 10, 10))  
     pygame.display.flip()
 
+pygame.mixer.music.stop()  # Para a música antes de sair
 pygame.quit()
 sys.exit()
