@@ -23,7 +23,7 @@ INTERVALO_METEOROS = 5000
 
 # Inicializa tela
 screen = pygame.display.set_mode((LARGURA, ALTURA))
-pygame.display.set_caption("Escape bombarilo GVzilo")
+pygame.display.set_caption("Escape bombardilo GVzilo")
 clock = pygame.time.Clock()
 fonte = pygame.font.SysFont("Arial", 24)
 fonte_grande = pygame.font.SysFont("Arial", 36)
@@ -103,6 +103,44 @@ def mostrar_ranking(dados):
     pygame.display.flip()
     pygame.time.wait(3000)
 
+def mostrar_instrucoes():
+    instrucoes = [
+        "INSTRUÇÕES:",
+        "- Use as setas ← e → para mover",
+        "- Pressione ESPAÇO para pular",
+        "- Pule nas plataformas para subir",
+        "- Plataformas pequenas fazem você pular",
+        "- Plataformas grandes dão pulo extra",
+        "- Evite as bombas do Bombardilo!",
+        "- Chegue a 1500 pontos para vencer!"
+    ]
+    
+    while True:
+        if background:
+            screen.blit(background, (0, 0))
+        else:
+            screen.fill(COR_BG)
+            
+        y_pos = 100
+        for linha in instrucoes:
+            texto = fonte.render(linha, True, COR_TEXTO)
+            screen.blit(texto, (LARGURA // 2 - texto.get_width() // 2, y_pos))
+            y_pos += 40
+            
+        voltar_rect = desenhar_texto("VOLTAR", LARGURA // 2 - 50, y_pos + 20, 
+                                   LARGURA // 2 - 50 <= pygame.mouse.get_pos()[0] <= LARGURA // 2 + 50 and 
+                                   y_pos + 20 <= pygame.mouse.get_pos()[1] <= y_pos + 60)
+        
+        pygame.display.flip()
+        
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif evento.type == pygame.MOUSEBUTTONDOWN:
+                if voltar_rect.collidepoint(pygame.mouse.get_pos()):
+                    return
+
 def menu():
     dados = carregar_dados()
     while True:
@@ -116,12 +154,14 @@ def menu():
         
         jogar_rect = desenhar_texto("JOGAR", centro_x - 50, 200, 
                                   centro_x - 50 <= mouse_pos[0] <= centro_x + 50 and 200 <= mouse_pos[1] <= 240)
-        skins_rect = desenhar_texto("HIGHSCORES", centro_x - 50, 270,
-                                  centro_x - 50 <= mouse_pos[0] <= centro_x + 50 and 270 <= mouse_pos[1] <= 310)
-        reset_rect = desenhar_texto("RESETAR SCORES", centro_x - 50, 340,
+        instrucoes_rect = desenhar_texto("INSTRUÇÕES", centro_x - 50, 270,
+                                       centro_x - 50 <= mouse_pos[0] <= centro_x + 50 and 270 <= mouse_pos[1] <= 310)
+        skins_rect = desenhar_texto("HIGHSCORES", centro_x - 50, 340,
                                   centro_x - 50 <= mouse_pos[0] <= centro_x + 50 and 340 <= mouse_pos[1] <= 380)
-        sair_rect = desenhar_texto("SAIR", centro_x - 50, 410,
+        reset_rect = desenhar_texto("RESETAR SCORES", centro_x - 50, 410,
                                   centro_x - 50 <= mouse_pos[0] <= centro_x + 50 and 410 <= mouse_pos[1] <= 450)
+        sair_rect = desenhar_texto("SAIR", centro_x - 50, 480,
+                                  centro_x - 50 <= mouse_pos[0] <= centro_x + 50 and 480 <= mouse_pos[1] <= 520)
         pygame.display.flip()
 
         for evento in pygame.event.get():
@@ -136,6 +176,8 @@ def menu():
                         dados[nickname] = 0
                     salvar_dados(dados)
                     return nickname, dados
+                elif instrucoes_rect.collidepoint(mouse_pos):
+                    mostrar_instrucoes()
                 elif skins_rect.collidepoint(mouse_pos):
                     mostrar_ranking(carregar_dados())
                 elif reset_rect.collidepoint(mouse_pos):
