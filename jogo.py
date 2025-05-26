@@ -318,9 +318,16 @@ class Jogador(pygame.sprite.Sprite):
         if teclas[pygame.K_LEFT]:
             self.vel_x = max(self.vel_x - 1, -VELOCIDADE_MOVIMENTO)
             self.olhando_direita = False
+        elif teclas[pygame.K_a]:
+            self.vel_x = max(self.vel_x - 1, -VELOCIDADE_MOVIMENTO)
+            self.olhando_direita = False
         elif teclas[pygame.K_RIGHT]:
             self.vel_x = min(self.vel_x + 1, VELOCIDADE_MOVIMENTO)
             self.olhando_direita = True
+        elif teclas[pygame.K_d]:
+            self.vel_x = min(self.vel_x + 1, VELOCIDADE_MOVIMENTO)
+            self.olhando_direita = True
+
         else:
             self.vel_x = self.vel_x * 0.9
 
