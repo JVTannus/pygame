@@ -36,7 +36,7 @@ pygame.mixer.music.play(-1)  # -1 faz a música tocar em loop
 
 # Inicializa sons
 som_pulo = pygame.mixer.Sound("Pulo.mp3")
-som_pulo.set_volume(0.3)  # Define o volume do som de pulo para 30%
+som_pulo.set_volume(0.15)  # Define o volume do som de pulo para 30%
 som_explosao = pygame.mixer.Sound("Explosao.mp3")
 som_explosao.set_volume(0.4)  # Define o volume do som de explosão para 40%
 som_bomba = pygame.mixer.Sound("sombomba.mp3")
